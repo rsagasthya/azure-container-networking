@@ -5,8 +5,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
-const subnetLabel string = "Subnet"
-const subnetCIDRLabel string = "SubnetCIDR"
+const (
+	subnetLabel     = "Subnet"
+	subnetCIDRLabel = "SubnetCIDR"
+)
 
 var (
 	ipamAllocatedIPCount = prometheus.NewGaugeVec(
