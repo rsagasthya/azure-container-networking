@@ -154,9 +154,7 @@ func (pm *Monitor) reconcile(ctx context.Context) error {
 	allocatedIPs := pm.httpService.GetPodIPConfigState()
 	state := buildIPPoolState(allocatedIPs, pm.spec)
 	logger.Printf("ipam-pool-monitor state %+v", state)
-
-	labels := []string{subnet, subnetCIDR}
-	observeIPPoolState(state, pm.metastate, labels)
+	observeIPPoolState(state, pm.metastate, []string{subnet, subnetCIDR})
 
 	switch {
 	// pod count is increasing
