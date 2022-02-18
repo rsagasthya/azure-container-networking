@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	subnetLabel     = "Subnet"
-	subnetCIDRLabel = "SubnetCIDR"
+	subnetLabel     = "subnet"
+	subnetCIDRLabel = "subnet_cidr"
 )
 
 var (
