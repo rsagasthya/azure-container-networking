@@ -18,6 +18,8 @@ const (
 	DefaultRefreshDelay = 1 * time.Second
 	// DefaultMaxIPs default maximum allocatable IPs
 	DefaultMaxIPs = 250
+	// Pod Network ARM ID Key for NNC Labels
+	PodSubnetARMIDLabel = "kubernetes.azure.com/podnetwork-arm-id"
 )
 
 type nodeNetworkConfigSpecUpdater interface {
@@ -49,8 +51,8 @@ type Monitor struct {
 	once        sync.Once
 }
 
-// Global Variables for Subnet and SubnetAddressSpace
-var subnet, subnetCIDR string
+// Global Variables for Subnet, Subnet Address Space and Pod Network ARM ID
+var subnet, subnetCIDR, subnetARMID string
 
 func NewMonitor(httpService cns.HTTPService, nnccli nodeNetworkConfigSpecUpdater, opts *Options) *Monitor {
 	if opts.RefreshDelay < 1 {
@@ -94,9 +96,10 @@ func (pm *Monitor) Start(ctx context.Context) error {
 			pm.spec = nnc.Spec
 			scaler := nnc.Status.Scaler
 
-			// Set SubnetName and SubnetAddressSpace values to the global subnet and subnetCIDR variables.
+			// Set SubnetName, SubnetAddressSpace and Pod Network ARM ID values to the global subnet, subnetCIDR and subnetARM variables.
 			subnet = nnc.Status.NetworkContainers[0].SubnetName
 			subnetCIDR = nnc.Status.NetworkContainers[0].SubnetAddressSpace
+			subnetARMID = nnc.Labels[PodSubnetARMIDLabel]
 
 			pm.metastate.batch = scaler.BatchSize
 			pm.metastate.max = scaler.MaxIPCount
@@ -157,7 +160,7 @@ func (pm *Monitor) reconcile(ctx context.Context) error {
 	allocatedIPs := pm.httpService.GetPodIPConfigState()
 	state := buildIPPoolState(allocatedIPs, pm.spec)
 	logger.Printf("ipam-pool-monitor state %+v", state)
-	observeIPPoolState(state, pm.metastate, []string{subnet, subnetCIDR})
+	observeIPPoolState(state, pm.metastate, []string{subnet, subnetCIDR, subnetARMID})
 
 	switch {
 	// pod count is increasing
