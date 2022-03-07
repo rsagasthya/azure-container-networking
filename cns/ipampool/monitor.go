@@ -2,6 +2,7 @@ package ipampool
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -18,8 +19,8 @@ const (
 	DefaultRefreshDelay = 1 * time.Second
 	// DefaultMaxIPs default maximum allocatable IPs
 	DefaultMaxIPs = 250
-	// Pod Network ARM ID Key for NNC Labels
-	PodSubnetARMIDLabel = "kubernetes.azure.com/podnetwork-arm-id"
+	// Subnet ARM ID /subscriptions/$(SUB)/resourceGroups/$(GROUP)/providers/Microsoft.Network/virtualNetworks/$(VNET)/subnets/$(subnet)
+	subnetARMIDTemplate = "/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network/virtualNetworks/%s/subnets/%s"
 )
 
 type nodeNetworkConfigSpecUpdater interface {
@@ -99,7 +100,7 @@ func (pm *Monitor) Start(ctx context.Context) error {
 			// Set SubnetName, SubnetAddressSpace and Pod Network ARM ID values to the global subnet, subnetCIDR and subnetARM variables.
 			subnet = nnc.Status.NetworkContainers[0].SubnetName
 			subnetCIDR = nnc.Status.NetworkContainers[0].SubnetAddressSpace
-			subnetARMID = nnc.Labels[PodSubnetARMIDLabel]
+			subnetARMID = GenerateARMID(nnc)
 
 			pm.metastate.batch = scaler.BatchSize
 			pm.metastate.max = scaler.MaxIPCount
@@ -344,6 +345,20 @@ func (pm *Monitor) GetStateSnapshot() cns.IpamPoolMonitorStateSnapshot {
 			Spec: spec,
 		},
 	}
+}
+
+// GenerateARMID uses the Subnet ARM ID format to populate the ARM ID with the metadata.
+// If either of the metadata attributes are empty, then the ARM ID will be an empty string.
+func GenerateARMID(nnc v1alpha.NodeNetworkConfig) string {
+	subscription := nnc.Status.NetworkContainers[0].SubscriptionID
+	resourceGroup := nnc.Status.NetworkContainers[0].ResourceGroupID
+	vnetId := nnc.Status.NetworkContainers[0].VNETID
+	subnetId := nnc.Status.NetworkContainers[0].SubnetId
+
+	if subscription == "" || resourceGroup == "" || vnetId == "" || subnetId == "" {
+		return ""
+	}
+	return fmt.Sprintf(subnetARMIDTemplate, subscription, resourceGroup, vnetId, subnetId)
 }
 
 // Update ingests a NodeNetworkConfig, clamping some values to ensure they are legal and then
