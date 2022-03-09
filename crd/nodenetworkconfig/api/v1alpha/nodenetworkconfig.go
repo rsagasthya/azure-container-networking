@@ -83,8 +83,8 @@ type NetworkContainer struct {
 	NodeIP             string         `json:"nodeIP,omitempty"`
 	SubscriptionID     string         `json:"subcriptionId,omitempty"`
 	ResourceGroupID    string         `json:"resourceGroupId,omitempty"`
-	VNETID             string         `json:"vnetId,omitempty"`
-	SubnetId           string         `json:"subnetId,omitempty"`
+	VNETID             string         `json:"vnetID,omitempty"`
+	SubnetID           string         `json:"subnetID,omitempty"`
 }
 
 // IPAssignment groups an IP address and Name. Name is a UUID set by the the IP address assigner.
