@@ -353,7 +353,7 @@ func GenerateARMID(nnc v1alpha.NodeNetworkConfig) string {
 	subscription := nnc.Status.NetworkContainers[0].SubscriptionID
 	resourceGroup := nnc.Status.NetworkContainers[0].ResourceGroupID
 	vnetId := nnc.Status.NetworkContainers[0].VNETID
-	subnetId := nnc.Status.NetworkContainers[0].SubnetId
+	subnetId := nnc.Status.NetworkContainers[0].SubnetID
 
 	if subscription == "" || resourceGroup == "" || vnetId == "" || subnetId == "" {
 		return ""
