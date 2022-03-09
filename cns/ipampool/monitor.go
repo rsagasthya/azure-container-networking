@@ -100,7 +100,7 @@ func (pm *Monitor) Start(ctx context.Context) error {
 			// Set SubnetName, SubnetAddressSpace and Pod Network ARM ID values to the global subnet, subnetCIDR and subnetARM variables.
 			subnet = nnc.Status.NetworkContainers[0].SubnetName
 			subnetCIDR = nnc.Status.NetworkContainers[0].SubnetAddressSpace
-			subnetARMID = GenerateARMID(nnc)
+			subnetARMID = GenerateARMID(&nnc)
 
 			pm.metastate.batch = scaler.BatchSize
 			pm.metastate.max = scaler.MaxIPCount
@@ -349,16 +349,16 @@ func (pm *Monitor) GetStateSnapshot() cns.IpamPoolMonitorStateSnapshot {
 
 // GenerateARMID uses the Subnet ARM ID format to populate the ARM ID with the metadata.
 // If either of the metadata attributes are empty, then the ARM ID will be an empty string.
-func GenerateARMID(nnc v1alpha.NodeNetworkConfig) string {
+func GenerateARMID(nnc *v1alpha.NodeNetworkConfig) string {
 	subscription := nnc.Status.NetworkContainers[0].SubscriptionID
 	resourceGroup := nnc.Status.NetworkContainers[0].ResourceGroupID
-	vnetId := nnc.Status.NetworkContainers[0].VNETID
-	subnetId := nnc.Status.NetworkContainers[0].SubnetID
+	vnetID := nnc.Status.NetworkContainers[0].VNETID
+	subnetID := nnc.Status.NetworkContainers[0].SubnetID
 
-	if subscription == "" || resourceGroup == "" || vnetId == "" || subnetId == "" {
+	if subscription == "" || resourceGroup == "" || vnetID == "" || subnetID == "" {
 		return ""
 	}
-	return fmt.Sprintf(subnetARMIDTemplate, subscription, resourceGroup, vnetId, subnetId)
+	return fmt.Sprintf(subnetARMIDTemplate, subscription, resourceGroup, vnetID, subnetID)
 }
 
 // Update ingests a NodeNetworkConfig, clamping some values to ensure they are legal and then
