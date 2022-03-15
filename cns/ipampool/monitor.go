@@ -19,7 +19,7 @@ const (
 	DefaultRefreshDelay = 1 * time.Second
 	// DefaultMaxIPs default maximum allocatable IPs
 	DefaultMaxIPs = 250
-	// Subnet ARM ID /subscriptions/$(SUB)/resourceGroups/$(GROUP)/providers/Microsoft.Network/virtualNetworks/$(VNET)/subnets/$(subnet)
+	// Subnet ARM ID /subscriptions/$(SUB)/resourceGroups/$(GROUP)/providers/Microsoft.Network/virtualNetworks/$(VNET)/subnets/$(SUBNET)
 	subnetARMIDTemplate = "/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network/virtualNetworks/%s/subnets/%s"
 )
 
@@ -52,7 +52,7 @@ type Monitor struct {
 	once        sync.Once
 }
 
-// Global Variables for Subnet, Subnet Address Space and Pod Network ARM ID
+// Global Variables for Subnet, Subnet Address Space and Subnet ARM ID
 var subnet, subnetCIDR, subnetARMID string
 
 func NewMonitor(httpService cns.HTTPService, nnccli nodeNetworkConfigSpecUpdater, opts *Options) *Monitor {
@@ -100,7 +100,7 @@ func (pm *Monitor) Start(ctx context.Context) error {
 			// Set SubnetName, SubnetAddressSpace and Pod Network ARM ID values to the global subnet, subnetCIDR and subnetARM variables.
 			subnet = nnc.Status.NetworkContainers[0].SubnetName
 			subnetCIDR = nnc.Status.NetworkContainers[0].SubnetAddressSpace
-			subnetARMID = GenerateARMID(&nnc)
+			subnetARMID = GenerateARMID(&nnc.Status.NetworkContainers[0])
 
 			pm.metastate.batch = scaler.BatchSize
 			pm.metastate.max = scaler.MaxIPCount
@@ -349,11 +349,11 @@ func (pm *Monitor) GetStateSnapshot() cns.IpamPoolMonitorStateSnapshot {
 
 // GenerateARMID uses the Subnet ARM ID format to populate the ARM ID with the metadata.
 // If either of the metadata attributes are empty, then the ARM ID will be an empty string.
-func GenerateARMID(nnc *v1alpha.NodeNetworkConfig) string {
-	subscription := nnc.Status.NetworkContainers[0].SubscriptionID
-	resourceGroup := nnc.Status.NetworkContainers[0].ResourceGroupID
-	vnetID := nnc.Status.NetworkContainers[0].VNETID
-	subnetID := nnc.Status.NetworkContainers[0].SubnetID
+func GenerateARMID(nc *v1alpha.NetworkContainer) string {
+	subscription := nc.SubscriptionID
+	resourceGroup := nc.ResourceGroupID
+	vnetID := nc.VNETID
+	subnetID := nc.SubnetID
 
 	if subscription == "" || resourceGroup == "" || vnetID == "" || subnetID == "" {
 		return ""
