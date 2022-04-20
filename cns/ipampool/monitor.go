@@ -52,8 +52,12 @@ type Monitor struct {
 	once        sync.Once
 }
 
-// Global Variables for Subnet, Subnet Address Space and Subnet ARM ID
+// Global Variables:
+// For Subnet, Subnet Address Space and Subnet ARM ID
 var subnet, subnetCIDR, subnetARMID string
+
+// For List of Unique Primary IP Addresses
+var ipAddresses map[string]int
 
 func NewMonitor(httpService cns.HTTPService, nnccli nodeNetworkConfigSpecUpdater, opts *Options) *Monitor {
 	if opts.RefreshDelay < 1 {
@@ -80,6 +84,8 @@ func (pm *Monitor) Start(ctx context.Context) error {
 	ticker := time.NewTicker(pm.opts.RefreshDelay)
 	defer ticker.Stop()
 
+	ipAddresses = make(map[string]int)
+
 	for {
 		// proceed when things happen:
 		select {
@@ -100,6 +106,13 @@ func (pm *Monitor) Start(ctx context.Context) error {
 			subnet = nnc.Status.NetworkContainers[0].SubnetName
 			subnetCIDR = nnc.Status.NetworkContainers[0].SubnetAddressSpace
 			subnetARMID = GenerateARMID(&nnc.Status.NetworkContainers[0])
+
+			// Add Primary IP to Map, if not present.
+			for _, nc := range nnc.Status.NetworkContainers {
+				if ipAddresses[nc.PrimaryIP] == 0 {
+					ipAddresses[nc.PrimaryIP] = 1
+				}
+			}
 
 			pm.metastate.batch = scaler.BatchSize
 			pm.metastate.max = scaler.MaxIPCount
@@ -140,7 +153,7 @@ type ipPoolState struct {
 
 func buildIPPoolState(ips map[string]cns.IPConfigurationStatus, spec v1alpha.NodeNetworkConfigSpec) ipPoolState {
 	state := ipPoolState{
-		totalIPs:     int64(len(ips)),
+		totalIPs:     int64(len(ipAddresses)) + int64(len(ips)),
 		requestedIPs: spec.RequestedIPCount,
 	}
 	for _, v := range ips {
