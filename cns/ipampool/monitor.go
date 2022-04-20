@@ -108,10 +108,8 @@ func (pm *Monitor) Start(ctx context.Context) error {
 			subnetARMID = GenerateARMID(&nnc.Status.NetworkContainers[0])
 
 			// Add Primary IP to Map, if not present.
-			for _, nc := range nnc.Status.NetworkContainers {
-				if ipAddresses[nc.PrimaryIP] == 0 {
-					ipAddresses[nc.PrimaryIP] = 1
-				}
+			for i := 0; i < len(nnc.Status.NetworkContainers); i++ {
+				ipAddresses[nnc.Status.NetworkContainers[i].PrimaryIP] = 1
 			}
 
 			pm.metastate.batch = scaler.BatchSize
