@@ -34,7 +34,7 @@ type metaState struct {
 	maxFreeCount  int64
 	minFreeCount  int64
 	notInUseCount int64
-	ipAddresses   map[string]bool
+	ipAddresses   map[string]struct{}
 }
 
 type Options struct {
@@ -103,10 +103,10 @@ func (pm *Monitor) Start(ctx context.Context) error {
 			subnetCIDR = nnc.Status.NetworkContainers[0].SubnetAddressSpace
 			subnetARMID = GenerateARMID(&nnc.Status.NetworkContainers[0])
 
-			pm.metastate.ipAddresses = make(map[string]bool)
+			pm.metastate.ipAddresses = make(map[string]struct{})
 			// Add Primary IP to Map, if not present.
 			for i := 0; i < len(nnc.Status.NetworkContainers); i++ {
-				pm.metastate.ipAddresses[nnc.Status.NetworkContainers[i].PrimaryIP] = true
+				pm.metastate.ipAddresses[nnc.Status.NetworkContainers[i].PrimaryIP] = struct{}{}
 			}
 
 			pm.metastate.batch = scaler.BatchSize
@@ -146,12 +146,16 @@ type ipPoolState struct {
 	totalIPs int64
 }
 
-func buildIPPoolState(ips map[string]cns.IPConfigurationStatus, spec v1alpha.NodeNetworkConfigSpec, ipAddresses map[string]bool) ipPoolState {
+func buildIPPoolState(ips map[string]cns.IPConfigurationStatus, spec v1alpha.NodeNetworkConfigSpec, primaryIPAddresses map[string]struct{}) ipPoolState {
 	state := ipPoolState{
-		totalIPs:     int64(len(ipAddresses)) + int64(len(ips)),
+		totalIPs:     int64(len(primaryIPAddresses)),
 		requestedIPs: spec.RequestedIPCount,
 	}
-	for _, v := range ips {
+	for ip, v := range ips {
+		_, ipIsPrimary := primaryIPAddresses[ip]
+		if !ipIsPrimary {
+			state.totalIPs++
+		}
 		switch v.GetState() {
 		case types.Assigned:
 			state.allocatedToPods++
