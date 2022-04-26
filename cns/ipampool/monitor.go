@@ -148,14 +148,10 @@ type ipPoolState struct {
 
 func buildIPPoolState(ips map[string]cns.IPConfigurationStatus, spec v1alpha.NodeNetworkConfigSpec, primaryIPAddresses map[string]struct{}) ipPoolState {
 	state := ipPoolState{
-		totalIPs:     int64(len(primaryIPAddresses)),
+		totalIPs:     int64(len(primaryIPAddresses)) + int64(len(ips)),
 		requestedIPs: spec.RequestedIPCount,
 	}
-	for ip, v := range ips {
-		_, ipIsPrimary := primaryIPAddresses[ip]
-		if !ipIsPrimary {
-			state.totalIPs++
-		}
+	for _, v := range ips {
 		switch v.GetState() {
 		case types.Assigned:
 			state.allocatedToPods++
