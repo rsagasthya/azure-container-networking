@@ -29,12 +29,12 @@ type nodeNetworkConfigSpecUpdater interface {
 
 // metaState is the Monitor's configuration state for the IP pool.
 type metaState struct {
-	batch         int64
-	max           int64
-	maxFreeCount  int64
-	minFreeCount  int64
-	notInUseCount int64
-	ipAddresses   map[string]struct{}
+	batch              int64
+	max                int64
+	maxFreeCount       int64
+	minFreeCount       int64
+	notInUseCount      int64
+	primaryIPAddresses map[string]struct{}
 }
 
 type Options struct {
@@ -103,10 +103,13 @@ func (pm *Monitor) Start(ctx context.Context) error {
 			subnetCIDR = nnc.Status.NetworkContainers[0].SubnetAddressSpace
 			subnetARMID = GenerateARMID(&nnc.Status.NetworkContainers[0])
 
-			pm.metastate.ipAddresses = make(map[string]struct{})
+			pm.metastate.primaryIPAddresses = make(map[string]struct{})
 			// Add Primary IP to Map, if not present.
+			// This is only for Swift i.e. if NC Type is vnet.
 			for i := 0; i < len(nnc.Status.NetworkContainers); i++ {
-				pm.metastate.ipAddresses[nnc.Status.NetworkContainers[i].PrimaryIP] = struct{}{}
+				if nnc.Status.NetworkContainers[i].Type == v1alpha.VNET {
+					pm.metastate.primaryIPAddresses[nnc.Status.NetworkContainers[i].PrimaryIP] = struct{}{}
+				}
 			}
 
 			pm.metastate.batch = scaler.BatchSize
@@ -148,7 +151,7 @@ type ipPoolState struct {
 
 func buildIPPoolState(ips map[string]cns.IPConfigurationStatus, spec v1alpha.NodeNetworkConfigSpec, primaryIPAddresses map[string]struct{}) ipPoolState {
 	state := ipPoolState{
-		totalIPs:     int64(len(primaryIPAddresses)) + int64(len(ips)),
+		totalIPs:     int64(len(primaryIPAddresses) + len(ips)),
 		requestedIPs: spec.RequestedIPCount,
 	}
 	for _, v := range ips {
@@ -170,7 +173,7 @@ func buildIPPoolState(ips map[string]cns.IPConfigurationStatus, spec v1alpha.Nod
 
 func (pm *Monitor) reconcile(ctx context.Context) error {
 	allocatedIPs := pm.httpService.GetPodIPConfigState()
-	state := buildIPPoolState(allocatedIPs, pm.spec, pm.metastate.ipAddresses)
+	state := buildIPPoolState(allocatedIPs, pm.spec, pm.metastate.primaryIPAddresses)
 	logger.Printf("ipam-pool-monitor state %+v", state)
 	observeIPPoolState(state, pm.metastate, []string{subnet, subnetCIDR, subnetARMID})
 
