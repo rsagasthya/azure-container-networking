@@ -107,7 +107,8 @@ func (pm *Monitor) Start(ctx context.Context) error {
 			// Add Primary IP to Map, if not present.
 			// This is only for Swift i.e. if NC Type is vnet.
 			for i := 0; i < len(nnc.Status.NetworkContainers); i++ {
-				if nnc.Status.NetworkContainers[i].Type == v1alpha.VNET {
+				if nnc.Status.NetworkContainers[i].Type == "" ||
+					nnc.Status.NetworkContainers[i].Type == v1alpha.VNET {
 					pm.metastate.primaryIPAddresses[nnc.Status.NetworkContainers[i].PrimaryIP] = struct{}{}
 				}
 			}
