@@ -50,10 +50,10 @@ spec:
           status:
             description: ClusterSubnetStateStatus defines the observed state of ClusterSubnetState
             properties:
-              Status:
+              Exhausted:
                 type: boolean
             required:
-            - Status
+            - Exhausted
             type: object
         type: object
     served: true

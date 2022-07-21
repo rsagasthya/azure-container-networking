@@ -32,7 +32,7 @@ type ClusterSubnetStateSpec struct {
 
 // ClusterSubnetStateStatus defines the observed state of ClusterSubnetState
 type ClusterSubnetStateStatus struct {
-	Status bool `json:"Status"`
+	Exhausted bool `json:"Exhausted"`
 }
 
 // +kubebuilder:object:root=true
