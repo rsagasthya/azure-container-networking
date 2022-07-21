@@ -16,7 +16,7 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.status
+    - jsonPath: .status.exhausted
       name: Timestamp
       type: string
     - jsonPath: .spec.timestamp
