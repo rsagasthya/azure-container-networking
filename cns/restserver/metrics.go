@@ -14,7 +14,7 @@ const (
 	subnetLabel              = "subnet"
 	subnetCIDRLabel          = "subnet_cidr"
 	podnetARMIDLabel         = "podnet_arm_id"
-	cnsReturnCode            = "Cns-Return-Code"
+	cnsReturnCode            = "cns_return_code"
 	customerMetricLabel      = "customer_metric"
 	customerMetricLabelValue = "customer metric"
 )
@@ -64,43 +64,43 @@ var (
 	)
 	allocatedIPCount = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name:        "cx_allocated_ips",
+			Name:        "cx_allocated_ips_v2",
 			Help:        "Count of IPs CNS has Allocated",
 			ConstLabels: prometheus.Labels{customerMetricLabel: customerMetricLabelValue},
 		},
-		[]string{subnetLabel, subnetCIDRLabel, podnetARMIDLabel},
+		[]string{},
 	)
 	assignedIPCount = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name:        "cx_assigned_ips",
+			Name:        "cx_assigned_ips_v2",
 			Help:        "Count of IPs CNS has Assigned to Pods",
 			ConstLabels: prometheus.Labels{customerMetricLabel: customerMetricLabelValue},
 		},
-		[]string{subnetLabel, subnetCIDRLabel, podnetARMIDLabel},
+		[]string{},
 	)
 	availableIPCount = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name:        "cx_available_ips",
+			Name:        "cx_available_ips_v2",
 			Help:        "Count of IPs Available",
 			ConstLabels: prometheus.Labels{customerMetricLabel: customerMetricLabelValue},
 		},
-		[]string{subnetLabel, subnetCIDRLabel, podnetARMIDLabel},
+		[]string{},
 	)
 	pendingProgrammingIPCount = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name:        "cx_pending_programming_ips",
+			Name:        "cx_pending_programming_ips_v2",
 			Help:        "Count of IPs in Pending Programming State",
 			ConstLabels: prometheus.Labels{customerMetricLabel: customerMetricLabelValue},
 		},
-		[]string{subnetLabel, subnetCIDRLabel, podnetARMIDLabel},
+		[]string{},
 	)
 	pendingReleaseIPCount = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name:        "cx_pending_release_ips",
+			Name:        "cx_pending_release_ips_v2",
 			Help:        "Count of IPs in Pending Release State",
 			ConstLabels: prometheus.Labels{customerMetricLabel: customerMetricLabelValue},
 		},
-		[]string{subnetLabel, subnetCIDRLabel, podnetARMIDLabel},
+		[]string{},
 	)
 )
 
@@ -142,7 +142,7 @@ func stateTransitionMiddleware(i *cns.IPConfigurationStatus, s types.IPState) {
 	ipConfigStatusStateTransitionTime.WithLabelValues(string(i.GetState()), string(s)).Observe(time.Since(i.LastStateTransition).Seconds())
 }
 
-func publishIPStateMetrics(state ipState) {
+func publishIPStateMetrics(state *ipState) {
 	labels := []string{} // TODO. ragasthya Add dimensions to the IP Usage metrics.
 	allocatedIPCount.WithLabelValues(labels...).Set(float64(state.allocatedIPs))
 	assignedIPCount.WithLabelValues(labels...).Set(float64(state.assignedIPs))

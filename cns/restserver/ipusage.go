@@ -18,7 +18,7 @@ type ipState struct {
 	releasingIPs int64
 }
 
-func (service *HTTPRestService) buildIPState() ipState {
+func (service *HTTPRestService) buildIPState() *ipState {
 	service.Lock()
 	defer service.Unlock()
 
@@ -28,6 +28,7 @@ func (service *HTTPRestService) buildIPState() ipState {
 		availableIPs: 0,
 	}
 
+	//nolint:gocritic // This has to iterate over the IP Config state to get the counts.
 	for _, ipConfig := range service.PodIPConfigState {
 		state.allocatedIPs++
 		if ipConfig.GetState() == types.Assigned {
@@ -45,5 +46,5 @@ func (service *HTTPRestService) buildIPState() ipState {
 	}
 
 	logger.Printf("[IP Usage] allocated IPs: %d, assigned IPs: %d, available IPs: %d", state.allocatedIPs, state.assignedIPs, state.availableIPs)
-	return state
+	return &state
 }

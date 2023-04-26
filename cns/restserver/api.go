@@ -410,8 +410,7 @@ func (service *HTTPRestService) reserveIPAddress(w http.ResponseWriter, r *http.
 
 	if resp.ReturnCode == 0 {
 		// If Response is success i.e. code 0, then publish metrics.
-		state := service.buildIPState()
-		publishIPStateMetrics(state)
+		publishIPStateMetrics(service.buildIPState())
 	}
 
 	reserveResp := &cns.ReserveIPAddressResponse{Response: resp, IPAddress: address}
@@ -483,8 +482,7 @@ func (service *HTTPRestService) releaseIPAddress(w http.ResponseWriter, r *http.
 
 	if resp.ReturnCode == 0 {
 		// If Response is success i.e. code 0, then publish metrics.
-		state := service.buildIPState()
-		publishIPStateMetrics(state)
+		publishIPStateMetrics(service.buildIPState())
 	}
 
 	err = service.Listener.Encode(w, &resp)
