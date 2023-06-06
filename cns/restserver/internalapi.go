@@ -252,8 +252,8 @@ func (service *HTTPRestService) syncHostNCVersion(ctx context.Context, channelMo
 			continue
 		}
 		if localNCVersion > nmaNCVersion {
-			logger.Errorf("NC version from NMA is decreasing: have %d, got %d", localNCVersion, nmaNCVersion)
-			continue
+			// This means that NMAgent reported a regression in the NC Version.
+			panic(fmt.Errorf("NC version from NMA is decreasing: have %d, got %d", localNCVersion, nmaNCVersion))
 		}
 		if channelMode == cns.CRD {
 			service.MarkIpsAsAvailableUntransacted(ncInfo.ID, nmaNCVersion)
