@@ -934,3 +934,50 @@ func TestCNIConflistGenerationOnNMAError(t *testing.T) {
 	time.Sleep(time.Second)
 	assert.Equal(t, 1, mockgen.getGeneratedCount())
 }
+
+func TestNMANCVersionRegression(t *testing.T) {
+	// cns.KubernetesCRD has one more logic compared to other orchestrator type, so test both of them
+	testCtx := context.Background()
+	orchestratorTypes := []string{cns.Kubernetes, cns.KubernetesCRD}
+	for _, orchestratorType := range orchestratorTypes {
+		orchestratorType := orchestratorType
+		t.Run(orchestratorType, func(t *testing.T) {
+			// Using a higher NC Version to create a regression.
+			req := createNCReqeustForSyncHostNCVersion(t)
+
+			ncVersionList := nma.NCVersionList{
+				Containers: []nma.NCVersion{
+					{
+						NetworkContainerID: req.NetworkContainerid,
+						Version:            "5",
+					},
+				},
+			}
+
+			mnma := &fakes.NMAgentClientFake{
+				GetNCVersionListF: func(_ context.Context) (nma.NCVersionList, error) {
+					return ncVersionList, nil
+				},
+			}
+			cleanup := setMockNMAgent(svc, mnma)
+			defer cleanup()
+
+			svc.state.ContainerStatus[ncID] = containerstatus{
+				ID:          ncID,
+				VMVersion:   "0",
+				HostVersion: "0",
+				CreateNetworkContainerRequest: cns.CreateNetworkContainerRequest{
+					Version: "10",
+				},
+			}
+
+			svc.SyncHostNCVersion(testCtx, orchestratorType)
+
+			ncVersionList.Containers[0].Version = "4"
+
+			assert.Panics(t, func() {
+				svc.SyncHostNCVersion(testCtx, orchestratorType)
+			})
+		})
+	}
+}
